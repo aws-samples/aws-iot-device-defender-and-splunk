@@ -1,0 +1,261 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'CloudFormation stack to demonstrate integration of AWS IoT Device Defender with Splunk.'
+
+Parameters:
+  splunkHECEndpoint:
+    Type: String
+    Description: 'Splunk HEC endpoint.'
+  splunkHECToken:
+    Type: String
+    Description: 'Splunk HEC token.'
+    NoEcho:  true
+  splunkSourceType:
+    Type: String
+    Description: 'Splunk source type for the event.'
+    Default: 'aws-iot-device-defender'
+
+Resources:
+  dataTransformationLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-dataTransformationLambdaExecutionRolePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-DataTransformation:*'
+  dataTransformationLambdaFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-DataTransformation'
+      RetentionInDays: 7
+  dataTransformationLambdaFunction:
+    Type: AWS::Serverless::Function
+    DependsOn: dataTransformationLambdaFunctionLogGroup
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-DataTransformation'
+      Description: 'Lambda function for data transformation.'
+      Architectures:
+        - arm64
+      Runtime: python3.11
+      Handler: 'app.lambda_handler'
+      CodeUri: './data-transformation/'
+      MemorySize: 256
+      Timeout: 60
+      ReservedConcurrentExecutions: 10
+      Role: !GetAtt dataTransformationLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SPLUNK_SOURCE_TYPE: !Ref splunkSourceType
+  kinesisFirehoseS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  kinesisFirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'firehose.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-KinesisFirehoseRolePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 's3:AbortMultipartUpload'
+                  - 's3:GetBucketLocation'
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                  - 's3:ListBucketMultipartUploads'
+                  - 's3:PutObject'
+                Resource:
+                  - !GetAtt kinesisFirehoseS3Bucket.Arn
+                  - !Sub '${kinesisFirehoseS3Bucket.Arn}/*'
+              - Effect: 'Allow'
+                Action:
+                  - 'lambda:InvokeFunction'
+                  - 'lambda:GetFunctionConfiguration'
+                Resource: !GetAtt dataTransformationLambdaFunction.Arn
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/kinesisfirehose/${AWS::StackName}-DeliveryStream:*'
+  kinesisFirehoseDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamName: !Sub '${AWS::StackName}-DeliveryStream'
+      DeliveryStreamType: DirectPut
+      DeliveryStreamEncryptionConfigurationInput:
+        KeyType: AWS_OWNED_CMK
+      SplunkDestinationConfiguration:
+        HECEndpoint: !Ref splunkHECEndpoint
+        HECEndpointType: Event
+        HECToken: !Ref splunkHECToken
+        RetryOptions:
+          DurationInSeconds: 60
+        ProcessingConfiguration:
+          Enabled: true
+          Processors:
+            - Type: Lambda
+              Parameters:
+                - ParameterName: LambdaArn
+                  ParameterValue: !GetAtt dataTransformationLambdaFunction.Arn
+                - ParameterName: RoleArn
+                  ParameterValue: !GetAtt kinesisFirehoseRole.Arn
+        S3BackupMode: AllEvents
+        S3Configuration:
+          BucketARN: !GetAtt kinesisFirehoseS3Bucket.Arn
+          RoleARN: !GetAtt kinesisFirehoseRole.Arn
+  deviceThing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: !Sub '${AWS::StackName}-IoT-Thing'
+  devicePolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
+              - 'iot:Connect'
+            Resource: !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:client/${!iot:Connection.Thing.ThingName}'
+          - Effect: 'Allow'
+            Action:
+              - 'iot:Publish'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/defender/*'
+          - Effect: 'Allow'
+            Action:
+              - 'iot:Subscribe'
+            Resource: !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/defender/*'
+          - Effect: 'Allow'
+            Action:
+              - 'iot:Receive'
+            Resource: !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/defender/*'
+      PolicyName: !Sub '${AWS::StackName}-IoT-DevicePolicy'
+  deviceThingGroup:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: !Sub '${AWS::StackName}-IoT-ThingGroup'
+  deviceSecurityProfileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'iot.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-IoT-SecurityProfilePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'iot:Publish'
+                Resource: !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/rules/${deviceTopicRule}'
+  deviceSecurityProfile:
+    Type: AWS::IoT::SecurityProfile
+    Properties:
+      MetricsExportConfig:
+        MqttTopic: !Sub '$aws/rules/${deviceTopicRule}'
+        RoleArn: !GetAtt deviceSecurityProfileRole.Arn
+      AdditionalMetricsToRetainV2:
+        - ExportMetric: true
+          Metric: 'aws:all-bytes-out'
+        - ExportMetric: true
+          Metric: 'aws:all-packets-out'
+        - ExportMetric: true
+          Metric: 'aws:destination-ip-addresses'
+        - ExportMetric: true
+          Metric: 'aws:num-authorization-failures'
+        - ExportMetric: true
+          Metric: 'aws:source-ip-address'
+        - ExportMetric: true
+          Metric: 'aws:num-listening-tcp-ports'
+        - ExportMetric: true
+          Metric: 'aws:num-listening-udp-ports'
+        - ExportMetric: true
+          Metric: 'aws:listening-tcp-ports'
+        - ExportMetric: true
+          Metric: 'aws:listening-udp-ports'
+      SecurityProfileDescription: String
+      SecurityProfileName: !Sub '${AWS::StackName}-IoT-SecurityProfile'
+      TargetArns:
+        - !GetAtt deviceThingGroup.Arn
+  deviceRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'iot.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-IoT-DeviceRuleRole'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'firehose:PutRecord'
+                  - 'firehose:PutRecordBatch'
+                Resource: !GetAtt kinesisFirehoseDeliveryStream.Arn
+  deviceTopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: !Sub '${AWS::StackName}IoTTopicRule'
+      TopicRulePayload:
+        Actions:
+          - Firehose:
+              DeliveryStreamName: !Ref kinesisFirehoseDeliveryStream
+              RoleArn: !GetAtt deviceRuleRole.Arn
+        Sql: 'SELECT *'
+
+Outputs:
+  ThingName:
+    Description: Name of AWS IoT thing created.
+    Value: !Ref deviceThing
