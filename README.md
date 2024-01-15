@@ -11,6 +11,7 @@ AWS Partner Splunk provides an analytics-driven security information and event m
 This solution demonstrates how you can use AWS IoT Device Defender, Amazon Kinesis Data Firehose and Splunk’s HTTP Event Collector (HEC) to ingest security-related metrics from IoT devices into Splunk. We will also demonstrate how Splunk can then be leveraged to quickly identify risks and systematically measure the impact from them materializing.
 
 ![Solution architecture](images/iot_device_defender_and_splunk_v0.4.png)
+
 Figure 1: Solution architecture
 
 ## AWS Blog post ##
@@ -50,28 +51,33 @@ You will also need the following Splunk prerequisites to be in place to ingest t
 1. Login to your Splunk Console and select **Settings**, then **Data inputs**. 
 
 ![Configuring a new data input](images/splunk_hec_step_1.png)
+
 Figure 2: Configuring a new data input
 
 2. From the **Data inputs** panel select **+ Add new** from the **HTTP Event Collector** section.
 
 ![Add a new HEC data input](images/splunk_hec_step_2.png)
+
 Figure 3: Add a new HEC data input
 
 3. From the **Add Data** screen enter a **Name**, select the **Enable indexer acknowledgement** and select **Next**.
 
 ![Select a HEC configuration name](images/splunk_hec_step_3.png)
+
 Figure 4: Select a HEC configuration name
 
 4. From the **Input Settings** screen, select **Structured**, then `aws:firehose:json` as your **Source type**.
 5. For **Select Allowed Indexes**, select the index you wish to send the AWS IoT Device Defender data to. Select **Review** when done. In this example, we have chosen an index named `aws_hfb`.
 
 ![Select HEC input settings](images/splunk_hec_step_4.png)
+
 Figure 5: Select HEC input settings
 
 6. Review the details and select **Submit** when done. 
 7. Once you have successfully created the HEC configuration, you will be able to obtain the **Token Value** from the list of HTTP Event Collector configurations. You will need this value when configuring the Kinesis Data Firehose delivery stream.
  
 ![View the HEC token value](images/splunk_hec_step_5.png)
+
 Figure 6: View the HEC token value
 
 ##### Obtain Splunk HEC URL #####
@@ -87,6 +93,7 @@ An aws-samples [GitHub repository](https://github.com/aws-samples/aws-iot-device
 2. Once successfully installed, run `sam --version` to return the AWS SAM CLI version.
 
 > Note: The AWS SAM CLI requires appropriate permissions to provision resources in the chosen AWS account. Ensure that [access key and secret access keys](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html) have been created using IAM, and that aws configure has been used to register them locally on your machine.
+
 3. To download all required files to your local machine, run the following command.
 `git clone https://github.com/aws-samples/aws-iot-device-defender-and-splunk`
 4. Navigate to the sam directory.
@@ -106,16 +113,19 @@ Parameter splunkSourceType [aws_iot_device_defender]: <Your Splunk event source 
 ```
 
 ![Deploying the SAM template](images/deploying_sam_step_1.png)
+
 Figure 7: Deploying the SAM template
 
 8. Confirm that the `Successfully created/updated stack` message is shown. 
 
 ![Confirming successful deployment of SAM template](images/deploying_sam_step_2.png)
+
 Figure 8: Confirming successful deployment of SAM template
 
 9. Note down the name of the AWS IoT thing created. This value is outputted by the CloudFormation stack. In this example, the thing name is `deviceDefenderSplunkDemo-IoT-Thing`.
  
 ![Noting down the AWS IoT thing name](images/deploying_sam_step_3.png)
+
 Figure 9: Noting down the AWS IoT thing name
 
 You are now ready to test the solution.
@@ -130,21 +140,25 @@ For purposes of the demonstration, the following steps will be performed on a Ra
 1. The CloudFormation template has deployed a device in AWS IoT Core, but certificates are yet to be generated. Navigate to the **AWS IoT console**, **All devices**, then **Things**. Select the thing with the name of your CloudFormation stack, and generate the certificates using the **Create certificate** button. 
 
 ![Generating device certificates](images/configure_iot_thing_and_certs_step_1.png)
+
 Figure 10: Generating device certificates
 
 2. Make sure that the device certificate is activated, and that device certificate, public key file, private key file and Amazon root certificate have all been securely downloaded. These will be required on the Raspberry Pi device for authentication and authorization with AWS IoT Core.
 
 ![Downloading device certificates](images/configure_iot_thing_and_certs_step_2.png)
+
 Figure 11: Downloading device certificates
 
 3. Click on the certificate ID back in the **AWS IoT console**. Under the **Policies** tab, select the **Attach policies** button and attach to the device policy that has been generated for you by the CloudFormation template. This will ensure that the device has the permissions needed to connect, publish and subscribe to the AWS IoT Device Defender’s reserved MQTT topics.
 
 ![Attaching device certificate to policy](images/configure_iot_thing_and_certs_step_3.png)
+
 Figure 12: Attaching device certificate to policy
 
 4. The CloudFormation template has already created an AWS IoT Core thing group which is mapped to the AWS IoT Device Defender security profile. Back on the thing page in the **AWS IoT console**, under the **Thing groups** tab, select the **Add to group** button and add the thing to this thing group.
 
 ![Adding thing to thing group](images/configure_iot_thing_and_certs_step_4.png)
+
 Figure 13: Adding thing to thing group
 
 Cloud-side metrics will now start to be generated automatically for the device and ingested into Splunk. 
@@ -156,6 +170,7 @@ In order to generate device-side metrics, we will use the [AWS IoT Device Defend
 1. Note down the AWS IoT Core endpoint details from the **AWS IoT console**.
 
 ![Noting down the AWS IoT Core endpoint](images/configure_iot_thing_and_certs_step_5.png)
+
 Figure 14: Noting down the AWS IoT Core endpoint
 
 2. On the Raspberry Pi, create a directory for certificates called `/certs`, and upload the previously downloaded certificate files using a file manager or a secure copy command supported by your workstation. We have renamed the files `AmazonRootCA1.pem`, `certificate.pem.crt` and `private.pem.key` to simplify this example.
@@ -178,7 +193,10 @@ python setup.py install
 ```
 cd ..
 git clone https://github.com/aws-samples/aws-iot-device-defender-agent-sdk-python.git
+```
 5.	Install the AWS IoT Device Defender Agent SDK for Python using the installer.
+
+```
 cd aws-iot-device-defender-agent-sdk-python
 pip install AWSIoTDeviceDefenderAgentSDK
 ```
@@ -222,6 +240,7 @@ netstat -plnt
 ```
 
 ![Displaying open TCP ports on the device](images/netstat_confirm_ports.png)
+
 Figure 15: Displaying open TCP ports on the device
 
 We are now ready to see if we can detect this anomaly in Splunk.
@@ -247,9 +266,11 @@ index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| spath name | search
 This query demonstrates that the total count of open TCP ports has changed on a single device, which warrants a deeper investigation by a security analyst.
 
 ![Displaying total number of open TCP ports](images/splunk_dashboard_step_1.png)
-Figure 15: Displaying total number of open TCP ports
+
+Figure 16: Displaying total number of open TCP ports
 
 As we now know the name of the device exhibiting suspicious behavior, we will run another SPL query to determine which ports may now be open.
+
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where thing="<YOUR THING NAME>" 
 | spath name 
@@ -260,7 +281,8 @@ index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where thing="<YOUR 
 ```
 
 ![Displaying open TCP ports on device](images/splunk_dashboard_step_2.png)
-Figure 16: Displaying open TCP ports on device
+
+Figure 17: Displaying open TCP ports on device
 
 The security analyst can further interrogate other data points, such as `aws:all-packets-out` or `aws:all-bytes-out` to see if there may be other indicators of data exfiltration. These can be assessed alongside data from other devices, such as network switches, routers and workstations, to provide a complete picture of what might have happened to this device, and the level of risk posed to the organization.
 
@@ -273,7 +295,8 @@ index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where isnotnull(che
 ```
 
 ![Displaying audit reports](images/splunk_dashboard_step_3.png)
-Figure 17: Displaying audit reports
+
+Figure 18: Displaying audit reports
 
 ### Cleaning up ###
 To avoid incurring future charges, delete the CloudFormation stacks that have been provisioned. This can be achieved using:
