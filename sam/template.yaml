@@ -67,7 +67,7 @@ Resources:
       Environment:
         Variables:
           SPLUNK_SOURCE_TYPE: !Ref splunkSourceType
-          AUDIT_SNS_TOPIC_ARN: !Ref deviceAccountAuditSNSTopic
+          AUDIT_SNS_TOPIC_ARN: !Ref deviceDefenderAccountAuditSNSTopic
   kinesisFirehoseS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -171,7 +171,7 @@ Resources:
     Type: AWS::IoT::ThingGroup
     Properties:
       ThingGroupName: !Sub '${AWS::StackName}-IoT-ThingGroup'
-  deviceSecurityProfileRole:
+  deviceDefenderSecurityProfileRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -192,13 +192,13 @@ Resources:
               - Effect: 'Allow'
                 Action:
                   - 'iot:Publish'
-                Resource: !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/rules/${deviceTopicRule}'
-  deviceSecurityProfile:
+                Resource: !Sub 'arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/rules/${deviceDefenderTopicRule}'
+  deviceDefenderSecurityProfile:
     Type: AWS::IoT::SecurityProfile
     Properties:
       MetricsExportConfig:
-        MqttTopic: !Sub '$aws/rules/${deviceTopicRule}'
-        RoleArn: !GetAtt deviceSecurityProfileRole.Arn
+        MqttTopic: !Sub '$aws/rules/${deviceDefenderTopicRule}'
+        RoleArn: !GetAtt deviceDefenderSecurityProfileRole.Arn
       AdditionalMetricsToRetainV2:
         - ExportMetric: true
           Metric: 'aws:all-bytes-out'
@@ -222,7 +222,7 @@ Resources:
       SecurityProfileName: !Sub '${AWS::StackName}-IoT-SecurityProfile'
       TargetArns:
         - !GetAtt deviceThingGroup.Arn
-  deviceRuleRole:
+  deviceDefenderRuleRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -236,7 +236,7 @@ Resources:
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
-        - PolicyName: !Sub '${AWS::StackName}-IoT-DeviceRuleRole'
+        - PolicyName: !Sub '${AWS::StackName}-IoT-DeviceDefenderRulePolicy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -245,7 +245,7 @@ Resources:
                   - 'firehose:PutRecord'
                   - 'firehose:PutRecordBatch'
                 Resource: !GetAtt kinesisFirehoseDeliveryStream.Arn
-  deviceTopicRule:
+  deviceDefenderTopicRule:
     Type: AWS::IoT::TopicRule
     Properties:
       RuleName: !Sub '${AWS::StackName}IoTTopicRule'
@@ -253,18 +253,18 @@ Resources:
         Actions:
           - Firehose:
               DeliveryStreamName: !Ref kinesisFirehoseDeliveryStream
-              RoleArn: !GetAtt deviceRuleRole.Arn
+              RoleArn: !GetAtt deviceDefenderRuleRole.Arn
         Sql: 'SELECT *'
-  deviceAccountAuditSNSTopic:
+  deviceDefenderAccountAuditSNSTopic:
     Type: AWS::SNS::Topic
-  deviceAccountFirehoseSNSSubscription:
+  deviceDefenderAccountFirehoseSNSSubscription:
     Type: AWS::SNS::Subscription
     Properties:
       Endpoint: !GetAtt kinesisFirehoseDeliveryStream.Arn
       Protocol: 'firehose'
-      SubscriptionRoleArn: !GetAtt deviceAccountFirehoseSNSSubscriptionRole.Arn
-      TopicArn: !Ref deviceAccountAuditSNSTopic
-  deviceAccountFirehoseSNSSubscriptionRole:
+      SubscriptionRoleArn: !GetAtt deviceDefenderAccountFirehoseSNSSubscriptionRole.Arn
+      TopicArn: !Ref deviceDefenderAccountAuditSNSTopic
+  deviceDefenderAccountFirehoseSNSSubscriptionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -290,7 +290,7 @@ Resources:
                   - 'firehose:PutRecord'
                   - 'firehose:PutRecordBatch'
                 Resource: !GetAtt kinesisFirehoseDeliveryStream.Arn
-  deviceAccountAuditSNSRole:
+  deviceDefenderAccountAuditSNSRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -304,15 +304,15 @@ Resources:
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
-        - PolicyName: !Sub '${AWS::StackName}-IoT-DeviceAccountAuditSNSPolicy'
+        - PolicyName: !Sub '${AWS::StackName}-IoT-DeviceDefenderAccountAuditSNSPolicy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: 'Allow'
                 Action:
                   - 'sns:Publish'
-                Resource: !Ref deviceAccountAuditSNSTopic
-  deviceAccountAuditRole:
+                Resource: !Ref deviceDefenderAccountAuditSNSTopic
+  deviceDefenderAccountAuditRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -327,7 +327,7 @@ Resources:
       Path: '/'
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::${AWS::Partition}:policy/service-role/AWSIoTDeviceDefenderAudit'
-  deviceAccountAuditConfiguration:
+  deviceDefenderAccountAuditConfiguration:
     Type: AWS::IoT::AccountAuditConfiguration
     Properties:
       AccountId: !Ref AWS::AccountId
@@ -367,32 +367,10 @@ Resources:
       AuditNotificationTargetConfigurations:
         Sns:
           Enabled: true
-          RoleArn: !GetAtt deviceAccountAuditSNSRole.Arn
-          TargetArn: !Ref deviceAccountAuditSNSTopic
+          RoleArn: !GetAtt deviceDefenderAccountAuditSNSRole.Arn
+          TargetArn: !Ref deviceDefenderAccountAuditSNSTopic
       RoleArn:
-        !GetAtt deviceAccountAuditRole.Arn
-  deviceScheduledAudit:
-    Type: AWS::IoT::ScheduledAudit
-    DependsOn: deviceAccountAuditConfiguration
-    Properties:
-      DayOfWeek: 'SUN'
-      Frequency: 'WEEKLY'
-      ScheduledAuditName: !Sub '${AWS::StackName}IoTScheduledAudit'
-      TargetCheckNames:
-        - 'AUTHENTICATED_COGNITO_ROLE_OVERLY_PERMISSIVE_CHECK'
-        - 'CA_CERTIFICATE_EXPIRING_CHECK'
-        - 'CA_CERTIFICATE_KEY_QUALITY_CHECK'
-        - 'CONFLICTING_CLIENT_IDS_CHECK'
-        - 'DEVICE_CERTIFICATE_EXPIRING_CHECK'
-        - 'DEVICE_CERTIFICATE_KEY_QUALITY_CHECK'
-        - 'DEVICE_CERTIFICATE_SHARED_CHECK'
-        - 'IOT_POLICY_OVERLY_PERMISSIVE_CHECK'
-        - 'IOT_ROLE_ALIAS_ALLOWS_ACCESS_TO_UNUSED_SERVICES_CHECK'
-        - 'IOT_ROLE_ALIAS_OVERLY_PERMISSIVE_CHECK'
-        - 'LOGGING_DISABLED_CHECK'
-        - 'REVOKED_CA_CERTIFICATE_STILL_ACTIVE_CHECK'
-        - 'REVOKED_DEVICE_CERTIFICATE_STILL_ACTIVE_CHECK'
-        - 'UNAUTHENTICATED_COGNITO_ROLE_OVERLY_PERMISSIVE_CHECK'
+        !GetAtt deviceDefenderAccountAuditRole.Arn
 
 Outputs:
   ThingName:
