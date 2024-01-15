@@ -10,6 +10,9 @@ AWS Partner Splunk provides an analytics-driven security information and event m
 
 This solution demonstrates how you can use AWS IoT Device Defender, Amazon Kinesis Data Firehose and Splunk’s HTTP Event Collector (HEC) to ingest security-related metrics from IoT devices into Splunk. We will also demonstrate how Splunk can then be leveraged to quickly identify risks and systematically measure the impact from them materializing.
 
+![Solution architecture](images/iot_device_defender_and_splunk_v0.4.png)
+Figure 2: Solution architecture
+
 ## AWS Blog post ##
 
 This approach is fully documented in the following blog post:
