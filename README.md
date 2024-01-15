@@ -4,7 +4,7 @@
 
 Growing adoption of Internet of Things (IoT) applications in regulated industries such as healthcare has necessitated the requirement to secure IoT devices at unprecedented scale. In addition to ensuring that the backend systems required to deliver such critical national services are resilient, organisations are increasingly investing their resources into securing devices that are outside of their traditional enterprise perimeter, using [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, operators of a fleet of connected medical devices will need to ensure that the product is not exhibiting anomalous behavior, and that they are functioning as designed. In the event a device’s security posture is compromised, it is vital that these events are holistically curated, analyzed and managed by the organization’s centralised security team to continue to safeguard the end-to-end delivery of patient care.
 
-[AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/) is a fully managed IoT security service that enables customers to secure their IoT applications by analyzing device-side and cloud-side metrics in near real-time. Using the [export metrics feature](https://docs.aws.amazon.com/iot/latest/developerguide/dd-detect-metrics-export.html), device-side metrics such as the number of bytes of packets sent, and cloud-side metrics such as the number of authorization failures, can be uploaded to a purpose-built enterprise security platform for downstream processing and analysis. 
+[AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/) is a fully managed IoT security service that enables customers to secure their IoT applications by analyzing device-side and cloud-side metrics in near real-time, and by reviewing generated audit reports. Using the [export metrics feature](https://docs.aws.amazon.com/iot/latest/developerguide/dd-detect-metrics-export.html), device-side metrics such as the number of bytes of packets sent, and cloud-side metrics such as the number of authorization failures, can be uploaded to a purpose-built enterprise security platform for downstream processing and analysis. 
 
 AWS Partner Splunk provides an analytics-driven security information and event management (SIEM) solution, Splunk Platform, which enables organizations to detect and respond to incidents in real-time. Using Splunk, customers can continue to maintain the security posture of their entire technology estate, from connected devices to workloads in the cloud.
 
@@ -288,7 +288,9 @@ The security analyst can further interrogate other data points, such as `aws:all
 
 ##### Audit reports #####
 
-Audit reports can be searched by using the following SPL:
+Audits can be scheduled, or run immediately. Navigate to Audit, then Results in the AWS IoT Core console, and select Create. Select Available checks, and select Run audit now (once) under Set schedule, before selecting Create.
+
+The security analyst can also track the status of the historical audit reports over time using SPL such as the below:
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where isnotnull(checkName)
