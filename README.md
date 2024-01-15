@@ -288,7 +288,7 @@ The security analyst can further interrogate other data points, such as `aws:all
 
 ##### Audit reports #####
 
-Audits can be scheduled, or run immediately. Navigate to Audit, then Results in the AWS IoT Core console, and select Create. Select Available checks, and select Run audit now (once) under Set schedule, before selecting Create.
+Audits can be scheduled, or run immediately. Navigate to **Audit**, then **Results** in the **AWS IoT Core console**, and select **Create**. Select **Available checks**, and select **Run audit now (once)** under **Set schedule**, before selecting **Create**.
 
 The security analyst can also track the status of the historical audit reports over time using SPL such as the below:
 
