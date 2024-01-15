@@ -67,6 +67,7 @@ Resources:
       Environment:
         Variables:
           SPLUNK_SOURCE_TYPE: !Ref splunkSourceType
+          AUDIT_SNS_TOPIC_ARN: !Ref deviceAccountAuditSNSTopic
   kinesisFirehoseS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -254,6 +255,144 @@ Resources:
               DeliveryStreamName: !Ref kinesisFirehoseDeliveryStream
               RoleArn: !GetAtt deviceRuleRole.Arn
         Sql: 'SELECT *'
+  deviceAccountAuditSNSTopic:
+    Type: AWS::SNS::Topic
+  deviceAccountFirehoseSNSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt kinesisFirehoseDeliveryStream.Arn
+      Protocol: 'firehose'
+      SubscriptionRoleArn: !GetAtt deviceAccountFirehoseSNSSubscriptionRole.Arn
+      TopicArn: !Ref deviceAccountAuditSNSTopic
+  deviceAccountFirehoseSNSSubscriptionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'sns.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-IoT-FirehoseSNSSubscriptionPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'firehose:DescribeDeliveryStream'
+                  - 'firehose:ListDeliveryStreams'
+                  - 'firehose:ListTagsForDeliveryStream'
+                  - 'firehose:PutRecord'
+                  - 'firehose:PutRecordBatch'
+                Resource: !GetAtt kinesisFirehoseDeliveryStream.Arn
+  deviceAccountAuditSNSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'iot.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-IoT-DeviceAccountAuditSNSPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'sns:Publish'
+                Resource: !Ref deviceAccountAuditSNSTopic
+  deviceAccountAuditRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'iot.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::${AWS::Partition}:policy/service-role/AWSIoTDeviceDefenderAudit'
+  deviceAccountAuditConfiguration:
+    Type: AWS::IoT::AccountAuditConfiguration
+    Properties:
+      AccountId: !Ref AWS::AccountId
+      AuditCheckConfigurations:
+        AuthenticatedCognitoRoleOverlyPermissiveCheck:
+          Enabled: true
+        CaCertificateExpiringCheck:
+          Enabled: true
+        CaCertificateKeyQualityCheck:
+          Enabled: true
+        ConflictingClientIdsCheck:
+          Enabled: true
+        DeviceCertificateExpiringCheck:
+          Enabled: true
+        DeviceCertificateKeyQualityCheck:
+          Enabled: true
+        DeviceCertificateSharedCheck:
+          Enabled: true
+        IntermediateCaRevokedForActiveDeviceCertificatesCheck:
+          Enabled: true
+        IotPolicyOverlyPermissiveCheck:
+          Enabled: true
+        IoTPolicyPotentialMisConfigurationCheck:
+          Enabled: true
+        IotRoleAliasAllowsAccessToUnusedServicesCheck:
+          Enabled: true
+        IotRoleAliasOverlyPermissiveCheck:
+          Enabled: true
+        LoggingDisabledCheck:
+          Enabled: true
+        RevokedCaCertificateStillActiveCheck:
+          Enabled: true
+        RevokedDeviceCertificateStillActiveCheck:
+          Enabled: true
+        UnauthenticatedCognitoRoleOverlyPermissiveCheck:
+          Enabled: true
+      AuditNotificationTargetConfigurations:
+        Sns:
+          Enabled: true
+          RoleArn: !GetAtt deviceAccountAuditSNSRole.Arn
+          TargetArn: !Ref deviceAccountAuditSNSTopic
+      RoleArn:
+        !GetAtt deviceAccountAuditRole.Arn
+  deviceScheduledAudit:
+    Type: AWS::IoT::ScheduledAudit
+    DependsOn: deviceAccountAuditConfiguration
+    Properties:
+      DayOfWeek: 'SUN'
+      Frequency: 'WEEKLY'
+      ScheduledAuditName: !Sub '${AWS::StackName}IoTScheduledAudit'
+      TargetCheckNames:
+        - 'AUTHENTICATED_COGNITO_ROLE_OVERLY_PERMISSIVE_CHECK'
+        - 'CA_CERTIFICATE_EXPIRING_CHECK'
+        - 'CA_CERTIFICATE_KEY_QUALITY_CHECK'
+        - 'CONFLICTING_CLIENT_IDS_CHECK'
+        - 'DEVICE_CERTIFICATE_EXPIRING_CHECK'
+        - 'DEVICE_CERTIFICATE_KEY_QUALITY_CHECK'
+        - 'DEVICE_CERTIFICATE_SHARED_CHECK'
+        - 'IOT_POLICY_OVERLY_PERMISSIVE_CHECK'
+        - 'IOT_ROLE_ALIAS_ALLOWS_ACCESS_TO_UNUSED_SERVICES_CHECK'
+        - 'IOT_ROLE_ALIAS_OVERLY_PERMISSIVE_CHECK'
+        - 'LOGGING_DISABLED_CHECK'
+        - 'REVOKED_CA_CERTIFICATE_STILL_ACTIVE_CHECK'
+        - 'REVOKED_DEVICE_CERTIFICATE_STILL_ACTIVE_CHECK'
+        - 'UNAUTHENTICATED_COGNITO_ROLE_OVERLY_PERMISSIVE_CHECK'
 
 Outputs:
   ThingName:
