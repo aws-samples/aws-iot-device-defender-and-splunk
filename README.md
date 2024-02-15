@@ -8,9 +8,9 @@ Growing adoption of Internet of Things (IoT) applications in regulated industrie
 
 AWS Partner Splunk provides an analytics-driven security information and event management (SIEM) solution, Splunk Platform, which enables organizations to detect and respond to incidents in real-time. Using Splunk, customers can continue to maintain the security posture of their entire technology estate, from connected devices to workloads in the cloud.
 
-This solution demonstrates how you can use AWS IoT Device Defender, Amazon Kinesis Data Firehose and Splunk’s HTTP Event Collector (HEC) to ingest security-related metrics from IoT devices into Splunk. We will also demonstrate how Splunk can then be leveraged to quickly identify risks and systematically measure the impact from them materializing.
+This solution demonstrates how you can use AWS IoT Device Defender, Amazon Data Firehose and Splunk’s HTTP Event Collector (HEC) to ingest security-related metrics from IoT devices into Splunk. We will also demonstrate how Splunk can then be leveraged to quickly identify risks and systematically measure the impact from them materializing.
 
-![Solution architecture](images/iot_device_defender_and_splunk_v0.4.png)
+![Solution architecture](images/iot_device_defender_and_splunk_v0.5.png)
 
 Figure 1: Solution architecture
 
@@ -47,7 +47,7 @@ You will also need the following Splunk prerequisites to be in place to ingest t
   * A Splunk index is a repository of data. You will need a Splunk index so that incoming AWS IoT Device Defender data can be indexed and made searchable.
 
 #### Configuring Splunk ####
-##### Setup HEC token for Kinesis Data Firehose #####
+##### Setup HEC token for Firehose #####
 1. Login to your Splunk Console and select **Settings**, then **Data inputs**. 
 
 ![Configuring a new data input](images/splunk_hec_step_1.png)
@@ -74,7 +74,7 @@ Figure 4: Select a HEC configuration name
 Figure 5: Select HEC input settings
 
 6. Review the details and select **Submit** when done. 
-7. Once you have successfully created the HEC configuration, you will be able to obtain the **Token Value** from the list of HTTP Event Collector configurations. You will need this value when configuring the Kinesis Data Firehose delivery stream.
+7. Once you have successfully created the HEC configuration, you will be able to obtain the **Token Value** from the list of HTTP Event Collector configurations. You will need this value when configuring the Firehose delivery stream.
  
 ![View the HEC token value](images/splunk_hec_step_5.png)
 
@@ -307,4 +307,4 @@ To avoid incurring future charges, delete the CloudFormation stacks that have be
 sam delete
 ```
 
-You may be required to empty the S3 bucket created for Kinesis Data Firehose and detach AWS IoT Core policy targets from the device policy that has been created if the CloudFormation stack is failing to delete.
+You may be required to empty the S3 bucket created for Firehose and detach AWS IoT Core policy targets from the device policy that has been created if the CloudFormation stack is failing to delete.
