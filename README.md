@@ -2,13 +2,13 @@
 
 ## Overview ##
 
-Growing adoption of Internet of Things (IoT) applications in regulated industries such as healthcare has necessitated the requirement to secure IoT devices at unprecedented scale. In addition to ensuring that the backend systems required to deliver such critical national services are resilient, organisations are increasingly investing their resources into securing devices that are outside of their traditional enterprise perimeter, using [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, operators of a fleet of connected medical devices will need to ensure that the product is not exhibiting anomalous behavior, and that they are functioning as designed. In the event a device’s security posture is compromised, it is vital that these events are holistically curated, analyzed and managed by the organization’s centralised security team to continue to safeguard the end-to-end delivery of patient care.
+Growing adoption of Internet of Things (IoT) applications in regulated industries, such as healthcare has necessitated the requirement to harden the security parameters of IoT solutions. In addition to ensuring that backend systems required to deliver mission-critical services are resilient, organizations are increasingly investing their resources into securing devices that are outside of their traditional enterprise perimeter, using [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, fleet operators of connected medical devices will need to ensure that the product is not exhibiting anomalous behavior and that they are functioning as designed. When a device’s security posture is compromised, it is vital that these events are holistically curated, analyzed, and managed by the organization’s centralized security team to continue to safeguard the end-to-end delivery of patient care.
 
-[AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/) is a fully managed IoT security service that enables customers to secure their IoT applications by analyzing device-side and cloud-side metrics in near real-time, and by reviewing generated audit reports. Using the [export metrics feature](https://docs.aws.amazon.com/iot/latest/developerguide/dd-detect-metrics-export.html), device-side metrics such as the number of bytes of packets sent, and cloud-side metrics such as the number of authorization failures, can be uploaded to a purpose-built enterprise security platform for downstream processing and analysis. 
+[AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/), a fully managed cloud service, continuously monitors device fleets to detect any abnormal device behavior, alerts about security issues, and provides built-in mitigation actions. It can audit your device-related resources against AWS IoT security best practices and evaluate your device’s and cloud-side metrics in near real-time against a pre-defined threshold and receive alerts when deviations are detected.
 
-AWS Partner Splunk provides an analytics-driven security information and event management (SIEM) solution, Splunk Platform, which enables organizations to detect and respond to incidents in real-time. Using Splunk, customers can continue to maintain the security posture of their entire technology estate, from connected devices to workloads in the cloud.
+AWS Partners, such as Splunk, provide security information and event management (SIEM) solutions that enable organizations to detect and respond to incidents in real-time. A security solution integrating AWS IoT Device Defender with the Splunk Platform can enhance your organization’s security posture by delivering data-driven cyber security for your end-to-end IoT applications.
 
-This solution demonstrates how you can use AWS IoT Device Defender, Amazon Data Firehose and Splunk’s HTTP Event Collector (HEC) to ingest security-related metrics from IoT devices into Splunk. We will also demonstrate how Splunk can then be leveraged to quickly identify risks and systematically measure the impact from them materializing.
+In this post we will illustrate how you can use AWS IoT Device Defender, Amazon Data Firehose and an AWS Partner solution, Splunk Platform, to ingest security-related metrics from IoT devices into a centralised SIEM. You will also learn how the security system can be further configured to quickly identify risks, and systematically measure the impact of those risks.
 
 ![Solution architecture](images/iot_device_defender_and_splunk_v0.5.png)
 
@@ -231,6 +231,8 @@ python aws-iot-device-defender-agent-sdk-python/AWSIoTDeviceDefenderAgentSDK/age
 sudo apt install vsftpd
 ```
 
+> Note: Depending on your operating system, you may be required to enable and start the `vsfptd` service, for example by running `sudo systemctl enable vsftpd` and `sudo systemctl start vsftpd`.
+
 2. Confirm after installation that there is now a new TCP port listening on port 21 by running `netstat`. 
 
 > Note: Some ports are duplicated for both IPv4 and IPv6.
@@ -299,6 +301,12 @@ index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where isnotnull(che
 ![Displaying audit reports](images/splunk_dashboard_step_3.png)
 
 Figure 18: Displaying audit reports
+
+### S3 bucket ###
+
+The solution deploys an Amazon S3 bucket to back up data that failed to be ingested into Splunk. This is facilitated through the [backup settings](https://docs.aws.amazon.com/firehose/latest/dev/create-configure.html) feature of Firehose.
+
+Refer to the Splunk blog post [AWS Firehose to Splunk - Two Easy Ways to Recover Those Failed Events](https://www.splunk.com/en_us/blog/tips-and-tricks/aws-firehose-to-splunk-two-easy-ways-to-recover-those-failed-events.html) on approaches to replaying failed events.
 
 ### Cleaning up ###
 To avoid incurring future charges, delete the CloudFormation stacks that have been provisioned. This can be achieved using:

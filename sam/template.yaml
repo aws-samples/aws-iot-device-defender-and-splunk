@@ -75,6 +75,22 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+  kinesisFirehoseS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        !Ref kinesisFirehoseS3Bucket
+      PolicyDocument:
+        Statement:
+        - Action: 's3:*'
+          Effect: Deny
+          Resource:
+            - !Sub arn:aws:s3:::${kinesisFirehoseS3Bucket}
+            - !Sub arn:aws:s3:::${kinesisFirehoseS3Bucket}/*
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+          Principal: '*'
   kinesisFirehoseRole:
     Type: AWS::IAM::Role
     Properties:
@@ -135,7 +151,7 @@ Resources:
                   ParameterValue: !GetAtt dataTransformationLambdaFunction.Arn
                 - ParameterName: RoleArn
                   ParameterValue: !GetAtt kinesisFirehoseRole.Arn
-        S3BackupMode: AllEvents
+        S3BackupMode: FailedEventsOnly
         S3Configuration:
           BucketARN: !GetAtt kinesisFirehoseS3Bucket.Arn
           RoleARN: !GetAtt kinesisFirehoseRole.Arn
