@@ -306,7 +306,7 @@ Figure 18: Displaying audit reports
 
 The solution deploys an Amazon S3 bucket to back up data that failed to be ingested into Splunk. This is facilitated through the [backup settings](https://docs.aws.amazon.com/firehose/latest/dev/create-configure.html) feature of Firehose.
 
-Refer to the Splunk blog post [AWS Firehose to Splunk - Two Easy Ways to Recover Those Failed Events](https://www.splunk.com/en_us/blog/tips-and-tricks/aws-firehose-to-splunk-two-easy-ways-to-recover-those-failed-events.html) on approaches to replaying failed events.
+Refer to the Splunk blog post [AWS Firehose to Splunk - Two Easy Ways to Recover Those Failed Events](https://www.splunk.com/en_us/blog/tips-and-tricks/aws-firehose-to-splunk-two-easy-ways-to-recover-those-failed-events.html) for approaches on how to replay failed events.
 
 ### Cleaning up ###
 To avoid incurring future charges, delete the CloudFormation stacks that have been provisioned. This can be achieved using:
