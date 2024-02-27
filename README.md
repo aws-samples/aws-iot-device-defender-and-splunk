@@ -33,7 +33,7 @@ For this walkthrough, you will need the following AWS prerequisites to be in pla
 * An AWS account
 * IAM permissions to deploy the AWS resources using AWS Serverless Application Model (AWS SAM)
 * Local installation of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
-* If you want to test this solution using your own IoT devices, you will be required to provision them separately using AWS IoT Core. IoT applications running on the devices should leverage the [AWS IoT Device SDK](https://docs.aws.amazon.com/iot/latest/developerguide/iot-sdks.html) or the [AWS IoT Device Client](https://github.com/awslabs/aws-iot-device-client), so that device-side metrics are published automatically using the included AWS IoT Device Defender libraries. If not, this logic would need to be coded into your IoT application.
+* If you want to test this solution using your own IoT devices, you will be required to provision them separately using AWS IoT Core. IoT applications running on the devices should leverage the [AWS IoT Device Client](https://github.com/awslabs/aws-iot-device-client) so that device-side metrics are published automatically using the included AWS IoT Device Defender libraries. If not, this logic would need to be coded into your IoT application.
 
 #### Splunk prerequisites ####
 
