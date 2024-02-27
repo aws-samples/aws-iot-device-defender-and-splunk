@@ -7,10 +7,10 @@ Parameters:
   splunkHECEndpoint:
     Type: String
     Description: 'Splunk HEC endpoint.'
-  splunkHECToken:
+  splunkHECTokenSecretName:
     Type: String
-    Description: 'Splunk HEC token.'
-    NoEcho:  true
+    Description: 'Name of the AWS Secrets Manager secret storing the Splunk HEC token.'
+    Default: 'splunkHECToken'
   splunkSourceType:
     Type: String
     Description: 'Splunk source type for the event.'
@@ -139,7 +139,8 @@ Resources:
       SplunkDestinationConfiguration:
         HECEndpoint: !Ref splunkHECEndpoint
         HECEndpointType: Event
-        HECToken: !Ref splunkHECToken
+        HECToken:
+          !Sub '{{resolve:secretsmanager:${splunkHECTokenSecretName}:SecretString:splunkHECToken}}'
         RetryOptions:
           DurationInSeconds: 60
         ProcessingConfiguration:
