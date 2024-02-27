@@ -2,7 +2,7 @@
 
 ## Overview ##
 
-Growing adoption of Internet of Things (IoT) applications in regulated industries, such as healthcare has necessitated the requirement to harden the security parameters of IoT solutions. In addition to ensuring that backend systems required to deliver mission-critical services are resilient, organizations are increasingly investing their resources into securing devices that are outside of their traditional enterprise perimeter, using [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, fleet operators of connected medical devices will need to ensure that the product is not exhibiting anomalous behavior and that they are functioning as designed. When a device’s security posture is compromised, it is vital that these events are holistically curated, analyzed, and managed by the organization’s centralized security team to continue to safeguard the end-to-end delivery of patient care.
+Growing adoption of Internet of Things (IoT) applications in regulated industries such as healthcare has necessitated the requirement to harden the security parameters of IoT solutions. In addition to ensuring that backend systems required to deliver mission-critical services are resilient, organizations are increasingly investing their resources into securing devices that are outside of their traditional enterprise perimeter, using [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, fleet operators of connected medical devices will need to ensure that the product is not exhibiting anomalous behavior and that they are functioning as designed. When a device’s security posture is compromised, it is vital that these events are holistically curated, analyzed, and managed by the organization’s centralized security team to continue to safeguard the end-to-end delivery of patient care.
 
 [AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/), a fully managed cloud service, continuously monitors device fleets to detect any abnormal device behavior, alerts about security issues, and provides built-in mitigation actions. It can audit your device-related resources against AWS IoT security best practices and evaluate your device’s and cloud-side metrics in near real-time against a pre-defined threshold and receive alerts when deviations are detected.
 
@@ -60,7 +60,7 @@ Figure 2: Configuring a new data input
 
 Figure 3: Add a new HEC data input
 
-3. From the **Add Data** screen enter a **Name**, select the **Enable indexer acknowledgement** and select **Next**.
+3. From the **Add Data** screen enter a **Name**, select **Enable indexer acknowledgement** and select **Next**.
 
 ![Select a HEC configuration name](images/splunk_hec_step_3.png)
 
@@ -105,7 +105,7 @@ Figure 8: Choosing secret type
 
 ![Creating a new secret](images/create_secret_step_3.png)
 
-Figure 9: Configure secret
+Figure 9: Configuring the secret
 
 #### Deploying the AWS SAM template ####
 
@@ -117,13 +117,21 @@ An aws-samples [GitHub repository](https://github.com/aws-samples/aws-iot-device
 > Note: The AWS SAM CLI requires appropriate permissions to provision resources in the chosen AWS account. Ensure that [access key and secret access keys](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html) have been created using IAM, and that aws configure has been used to register them locally on your machine.
 
 3. To download all required files to your local machine, run the following command.
+
 `git clone https://github.com/aws-samples/aws-iot-device-defender-and-splunk`
+
 4. Navigate to the sam directory.
+
 `cd sam`
+
 5. Build the SAM application.
+
 `sam build`
+
 6. Deploy the application.
+
 `sam deploy --guided`
+
 7. When prompted, enter the unique details chosen for your environment (you can keep the remainder as defaults). In this example, we have chosen `deviceDefenderSplunkDemo` as the AWS CloudFormation stack name, and `aws_iot_device_defender` as the Splunk [source type](https://docs.splunk.com/Splexicon:Sourcetype).
 
 ```
@@ -232,7 +240,7 @@ cd ~
 python aws-iot-device-defender-agent-sdk-python/AWSIoTDeviceDefenderAgentSDK/agent.py --endpoint <your.custom.endpoint.amazonaws.com> --rootCA certs/AmazonRootCA1.pem --cert certs/certificate.pem.crt --key certs/private.pem.key --format json -i 300 -id <ThingName>
 ```
 
-7. Confirm that no errors are returned, and that the agent connects successfully to the endpoint, and that it subscribes to the reserved AWS IoT Device Defender reserved MQTT topics and publishes data every 5 minutes.
+7. Confirm that no errors are returned, that the agent connects successfully to the endpoint, and that it subscribes to the reserved AWS IoT Device Defender reserved MQTT topics and publishes data every 5 minutes.
 
 ```
 Connecting to <your.custom.endpoint.amazonaws.com> with client ID 'deviceDefenderSplunkDemo-IoT-Thing'...
@@ -271,7 +279,7 @@ We are now ready to see if we can detect this anomaly in Splunk.
 
 #### Analyzing the events from Splunk ####
 
-Navigate to the Search & Reporting Splunk App in the Splunk console, and use the following Splunk Processing Language (SPL) query:
+Navigate to the **Search & Reporting Splunk App** in the **Splunk console**, and use the following Splunk Processing Language (SPL) query:
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"
@@ -293,7 +301,7 @@ This query demonstrates that the total count of open TCP ports has changed on a 
 
 Figure 19: Displaying total number of open TCP ports
 
-As we now know the name of the device exhibiting suspicious behavior, we will run another SPL query to determine which ports may now be open.
+As we now know the name of the device exhibiting suspicious behavior, we will run another SPL query to determine which ports are open.
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where thing="<YOUR THING NAME>" 
@@ -312,9 +320,9 @@ The security analyst can further interrogate other data points, such as `aws:all
 
 ##### Audit reports #####
 
-Audits can be scheduled, or run immediately. Navigate to **Audit**, then **Results** in the **AWS IoT Core console**, and select **Create**. Select **Available checks**, and select **Run audit now (once)** under **Set schedule**, before selecting **Create**.
+Audits can be scheduled, or run immediately. Navigate to **Audit**, then **Results** in the **AWS IoT console**, and select **Create**. Select **Available checks**, and select **Run audit now (once)** under **Set schedule**, before selecting **Create**.
 
-The security analyst can also track the status of the historical audit reports over time using SPL such as the below:
+The security analyst can track the status of the historical audit reports over time using SPL such as the below:
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where isnotnull(checkName)
