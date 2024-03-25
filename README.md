@@ -2,15 +2,15 @@
 
 ## Overview ##
 
-Growing adoption of Internet of Things (IoT) applications in regulated industries such as healthcare has necessitated the requirement to harden the security parameters of IoT solutions. In addition to ensuring that backend systems required to deliver mission-critical services are resilient, organizations are increasingly investing their resources into securing devices that are outside of their traditional enterprise perimeter, using [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, fleet operators of connected medical devices will need to ensure that the product is not exhibiting anomalous behavior and that they are functioning as designed. When a device’s security posture is compromised, it is vital that these events are holistically curated, analyzed, and managed by the organization’s centralized security team to continue to safeguard the end-to-end delivery of patient care.
+With the growing adoption of Internet of Things (IoT) applications in regulated industries, such as healthcare, hardening IoT security devices has become a requirement. In addition to ensuring that backend systems are resilient, organizations increasingly invest effort to secure devices outside the traditional enterprise perimeter with [zero trust principles](https://en.wikipedia.org/wiki/Zero_trust_security_model). For example, fleet operators for connected medical devices need to ensure that the product does not exhibit anomalous behavior and function as designed. When a device’s security posture is compromised, it’s vital that these events are efficiently identified, analyzed, and managed by a centralized security team to safeguard the delivery of end-to-end patient care.
 
-[AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/), a fully managed cloud service, continuously monitors device fleets to detect any abnormal device behavior, alerts about security issues, and provides built-in mitigation actions. It can audit your device-related resources against AWS IoT security best practices and evaluate your device’s and cloud-side metrics in near real-time against a pre-defined threshold and receive alerts when deviations are detected.
+[AWS IoT Device Defender](https://aws.amazon.com/iot-device-defender/), a fully managed cloud service, continuously monitors IoT fleets to detect any abnormal device behavior, trigger security alerts, and provide built-in mitigation actions. This service can audit device-related resources against AWS IoT security best practices, and evaluate device-side and cloud-side metrics in near real-time against a predefined threshold. You can then receive alerts when AWS IoT Device Defender detects deviations. AWS IoT Device Defender also has a feature called [ML Detect](https://docs.aws.amazon.com/iot/latest/developerguide/dd-detect-ml.html) that monitors metrics in near real-time, and applies machine learning (ML) algorithms to detect anomalies, and to raise alerts.
 
-AWS Partners, such as Splunk, provide security information and event management (SIEM) solutions that enable organizations to detect and respond to incidents in real-time. A security solution integrating AWS IoT Device Defender with the Splunk Platform can enhance your organization’s security posture by delivering data-driven cyber security for your end-to-end IoT applications.
+AWS Partners, such as [Splunk](https://www.splunk.com/), provide security information and event management (SIEM) solutions that enable organizations to detect and respond to incidents in near real-time. A security solution that integrates AWS IoT Device Defender with the Splunk Platform can enhance your organization’s security posture by delivering data-driven cyber security to end-to-end IoT applications.
 
-In this post we will illustrate how you can use AWS IoT Device Defender, Amazon Data Firehose and an AWS Partner solution, Splunk Platform, to ingest security-related metrics from IoT devices into a centralised SIEM. You will also learn how the security system can be further configured to quickly identify risks, and systematically measure the impact of those risks.
+In this repository, we illustrate how you can use AWS IoT Device Defender, [Amazon Data Firehose](https://aws.amazon.com/firehose/), and the Splunk Platform to ingest security-related metrics from IoT devices into a centralized SIEM. We also discuss how you can configure the security system to quickly identify risks and systematically measure their impact.
 
-![Solution architecture](images/iot_device_defender_and_splunk_v0.5.png)
+![Solution architecture](images/iot_device_defender_and_splunk_v0.6.png)
 
 Figure 1: Solution architecture
 
@@ -23,7 +23,7 @@ This approach is fully documented in the following blog post:
 ## Deployment ##
 
 ### Deploying the solution ###
-An [AWS SAM](https://aws.amazon.com/serverless/sam/) template has been provided to deploy all AWS resources required by this solution, including the Python code used by the Lambda function.
+An [AWS Serverless Application Model (SAM)](https://aws.amazon.com/serverless/sam/) template has been provided to deploy all AWS resources required by this solution, including the Python code used by the Lambda function.
 
 A Raspberry Pi running the [Raspberry Pi OS (64-bit)](https://www.raspberrypi.com/software/) is being used to simulate the IoT device.
 
@@ -31,7 +31,7 @@ A Raspberry Pi running the [Raspberry Pi OS (64-bit)](https://www.raspberrypi.co
 For this walkthrough, you will need the following AWS prerequisites to be in place: 
 
 * An AWS account
-* IAM permissions to deploy the AWS resources using AWS Serverless Application Model (AWS SAM)
+* IAM permissions to deploy the AWS resources using AWS SAM
 * Local installation of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 * If you want to test this solution using your own IoT devices, you will be required to provision them separately using AWS IoT Core. IoT applications running on the devices should leverage the [AWS IoT Device Client](https://github.com/awslabs/aws-iot-device-client) so that device-side metrics are published automatically using the included AWS IoT Device Defender libraries. If not, this logic would need to be coded into your IoT application.
 
@@ -47,7 +47,7 @@ You will also need the following Splunk prerequisites to be in place to ingest t
   * A Splunk index is a repository of data. You will need a Splunk index so that incoming AWS IoT Device Defender data can be indexed and made searchable.
 
 #### Configuring Splunk ####
-##### Setup HEC token for Firehose #####
+##### Setup HEC token for Amazon Data Firehose #####
 1. Login to your Splunk Console and select **Settings**, then **Data inputs**. 
 
 ![Configuring a new data input](images/splunk_hec_step_1.png)
@@ -87,7 +87,7 @@ You now have the HEC URL and Token Value which are required at the time of the A
 
 #### Storing the Splunk HEC token in AWS Secrets Manager ####
 
-AWS Secrets Manager is used to store the Splunk HEC token so it can be dynamically referenced at the time of the AWS SAM template deployment.
+AWS Secrets Manager is used to store the Splunk HEC token so that it can be dynamically referenced at the time of the AWS SAM template deployment.
 
 1. Navigate to **AWS Secrets Manager** and select **Store a new secret** to create a new secret.
 
@@ -109,7 +109,7 @@ Figure 9: Configuring the secret
 
 #### Deploying the AWS SAM template ####
 
-An aws-samples [GitHub repository](https://github.com/aws-samples/aws-iot-device-defender-and-splunk/) containing the SAM template and Lambda code has been made available so that you can test this solution yourself.
+An aws-samples [GitHub repository](https://github.com/aws-samples/aws-iot-device-defender-and-splunk/) containing the SAM template (including the Lambda code) has been made available so that you can test this solution yourself.
 
 1. Follow the steps in the [official documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) to install the latest release of the AWS SAM CLI for your operating system.
 2. Once successfully installed, run `sam --version` to return the AWS SAM CLI version.
@@ -279,7 +279,7 @@ We are now ready to see if we can detect this anomaly in Splunk.
 
 #### Analyzing the events from Splunk ####
 
-Navigate to the **Search & Reporting Splunk App** in the **Splunk console**, and use the following Splunk Processing Language (SPL) query:
+1. Navigate to the **Search & Reporting Splunk App** in the **Splunk console**, and use the following Splunk Processing Language (SPL) query:
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"
@@ -288,7 +288,7 @@ The search will return all cloud and client-side metrics, as well as audit repor
 
 ##### Metrics #####
 
-We will now write a new SPL query to monitor the `aws:num-listening-tcp-ports` value over time, by device.
+1. We will now write a new SPL query to monitor the `aws:num-listening-tcp-ports` value over time, by device.
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| spath name | search name="aws:num-listening-tcp-ports" 
@@ -301,7 +301,7 @@ This query demonstrates that the total count of open TCP ports has changed on a 
 
 Figure 19: Displaying total number of open TCP ports
 
-As we now know the name of the device exhibiting suspicious behavior, we will run another SPL query to determine which ports are open.
+2. As we now know the name of the device exhibiting suspicious behavior, we will run another SPL query to determine which ports are open.
 
 ```
 index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where thing="<YOUR THING NAME>" 
@@ -316,7 +316,7 @@ index="<YOUR INDEX>" sourcetype="<YOUR SPLUNK SOURCE TYPE>"| where thing="<YOUR 
 
 Figure 20: Displaying open TCP ports on device
 
-The security analyst can further interrogate other data points, such as `aws:all-packets-out` or `aws:all-bytes-out` to see if there may be other indicators of data exfiltration. These can be assessed alongside data from other devices, such as network switches, routers and workstations, to provide a complete picture of what might have happened to this device, and the level of risk posed to the organization.
+3. The security analyst can further interrogate other data points, such as `aws:all-packets-out` or `aws:all-bytes-out` to see if there may be other indicators of data exfiltration. These can be assessed alongside data from other devices, such as network switches, routers and workstations, to provide a complete picture of what might have happened to this device, and the level of risk posed to the organization.
 
 ##### Audit reports #####
 
