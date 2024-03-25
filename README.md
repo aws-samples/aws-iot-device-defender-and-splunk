@@ -18,7 +18,7 @@ Figure 1: Solution architecture
 
 This approach is fully documented in the following blog post:
 
-`TBC`
+https://aws.amazon.com/blogs/iot/use-aws-iot-device-defender-and-splunk-to-monitor-the-security-posture-of-your-iot-application/
 
 ## Deployment ##
 
